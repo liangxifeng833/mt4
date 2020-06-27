@@ -1,0 +1,79 @@
+//+------------------------------------------------------------------+
+//|                                                     一键开单1904.mq4 |
+//|                                                           arkulo |
+//|                                                           hahaha |
+//+------------------------------------------------------------------+
+#property copyright "arkulo"
+#property link      "hahaha"
+#property version   "1.00"
+#property strict
+#property script_show_inputs
+//--- input parameters
+enum buyOrSell
+{
+   BUY_STOP = 1,
+   SELL_STOP = 2,
+};
+input buyOrSell     orderType=BUY_STOP;
+input int      position_spot=5;
+input int      stop_profit=15;
+input int      stop_loss=10;
+
+string symbol_usd[] = {"EURUSD","AUDUSD","GBPUSD"};
+string symbol_jpy[] = {"USDJPY","EURJPY","GBPJPY"};
+int sign=1;
+
+//+------------------------------------------------------------------+
+//| Script program start function                                    |
+//+------------------------------------------------------------------+
+void OnStart()
+{
+      
+      //判断当前货币对是直盘，还是交叉盘
+      for(int i=0;i<ArraySize(symbol_jpy);i++)
+      {
+         if(symbol_jpy[i]==Symbol())
+         {
+            sign=2;
+         }
+      }
+      
+      //计算挂单、止盈止损点差
+      double position = (sign==1)?((double)position_spot)/10000:((double)position_spot)/100;
+      double stopProfit = (sign==1)?((double)stop_profit)/10000:((double)stop_profit)/100;
+      double stopLoss = (sign==1)?((double)stop_loss)/10000:((double)stop_loss)/100;
+      
+      //Print("结果：",position,stopProfit,stopLoss);
+      //buy挂单
+      int res;
+      if(orderType==1)
+      {
+         double buy_position = Ask + position;
+         double buy_stopProfit = buy_position + stopProfit;
+         double buy_stopLoss = buy_position - stopLoss;
+         
+         Print("当前卖价:",Ask," 挂单价：",buy_position," 止盈：",buy_stopProfit," 止损：",buy_stopLoss);
+         
+         res = OrderSend(Symbol(),OP_BUYSTOP,0.01,buy_position,3,buy_stopLoss,buy_stopProfit,"buy stop",1904,30,clrGreen);
+         //res = OrderSend(Symbol(),OP_BUY,0.01,Ask,3,(Ask-0.30),(Ask+0.30),"My order",16384,0,clrGreen);
+      }else
+      {
+         double sell_position = Bid - position;
+         double sell_stopProfit = sell_position - stopProfit;
+         double sell_stopLoss = sell_position + stopLoss;
+         Print("当前买价:",Bid," 挂单价：",sell_position," 止盈：",sell_stopProfit," 止损：",sell_stopLoss);
+         
+         res = OrderSend(Symbol(),OP_SELLSTOP,0.01,sell_position,3,sell_stopLoss,sell_stopProfit,"sell stop",1904,30,clrGreen);
+      }
+      
+      
+      if(res<0)
+      {
+         Alert("开单失败：",GetLastError());
+      }else
+      {
+         Alert("开单成功!!!");
+      }
+   
+}
+//+------------------------------------------------------------------+
